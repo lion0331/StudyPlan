@@ -1,0 +1,5 @@
+#pragma once
+#include "Function.h"
+
+
+INT_PTR CALLBACK Tab4DialogProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);

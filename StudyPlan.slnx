@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="StudyPlan/StudyPlan.vcxproj" Id="c1696147-76f8-4fef-80c9-59346de30dfa" />
+</Solution>
