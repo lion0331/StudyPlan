@@ -1,17 +1,24 @@
 #include "WinMain.h"
 
+#pragma comment(lib, "Shcore.lib")
+
 // 主函数
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd)
 {
 
 	HINSTANCE hInst = hInstance;
 
-	//SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2); // 高级自定义 DPI 缩放 Windows 10以上版本
-	// 设置当前进程为 DPI 意识
-	if (!SetProcessDPIAware())
+	if (!SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
 	{
-		MessageBox(NULL, TEXT("设置进程为 DPI 意识失败。"), TEXT("错误"), MB_OK | MB_ICONERROR);
-		return 0;
+		// 尝试 Per-Monitor 感知 (Windows 8.1+)
+		HRESULT hr = SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+		MessageBox(NULL, TEXT("降级为 Per-Monitor DPI 感知"), TEXT("DPI设置"), MB_OK | MB_ICONINFORMATION);
+		if (FAILED(hr))
+		{
+			// 最终降级为系统DPI感知 (Windows Vista+)
+			SetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE);
+			MessageBox(NULL, TEXT("降级为系统 DPI 感知"), TEXT("DPI设置"), MB_OK | MB_ICONINFORMATION);
+		}
 	}
 
 	// 尝试创建一个命名互斥体
