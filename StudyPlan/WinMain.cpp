@@ -1,14 +1,18 @@
 #include "WinMain.h"
 
 #pragma comment(lib, "Shcore.lib")
-
+#pragma comment(lib, "COMCTL32.LIB")
 // 主函数
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd)
 {
 
 	HINSTANCE hInst = hInstance;
 
-	if (!SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
+	BOOL SETDPI = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+	// 确保 ComCtl v6 初始化（Tab等控件）
+	INITCOMMONCONTROLSEX icc{ sizeof(icc), ICC_TAB_CLASSES | ICC_STANDARD_CLASSES | ICC_WIN95_CLASSES };
+	InitCommonControlsEx(&icc);
+	if (!SETDPI)
 	{
 		// 尝试 Per-Monitor 感知 (Windows 8.1+)
 		HRESULT hr = SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
@@ -189,7 +193,7 @@ BOOL IsRunAsAdmin()
 void InstallPage(HWND hWndParent, HWND hTabCtrl, std::vector<HWND>& hTabPages, int IDD_WND, const TCHAR* pageName, DLGPROC dlgProc)
 {
     HINSTANCE hInstance = GetModuleHandle(NULL);
-
+	DPI_AWARENESS_CONTEXT oldCtx = SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     // 创建子窗口，父窗口设置为Tab控件所在的主窗口
     HWND hTabPage = CreateDialogParam(
         hInstance,
@@ -197,7 +201,7 @@ void InstallPage(HWND hWndParent, HWND hTabCtrl, std::vector<HWND>& hTabPages, i
         hWndParent,
         dlgProc,
         NULL);
-
+	SetThreadDpiAwarenessContext(oldCtx);
     if (!hTabPage)
     {
         DWORD err = GetLastError();
@@ -231,17 +235,12 @@ void InstallPage(HWND hWndParent, HWND hTabCtrl, std::vector<HWND>& hTabPages, i
 // 调整Tab控件和子窗口大小的函数
 void ResizeTabPages(HWND hTabCtrl, std::vector<HWND>& hTabPages)
 {
-    // 获取DPI缩放因子
-    const UINT dpi = GetDpiForWindow(hTabCtrl);
-    const float scale = dpi / 96.0f;
-
     // 计算正确的内容区域
     RECT rcTab;
     GetClientRect(hTabCtrl, &rcTab);
 
-    // 仅缩放偏移部分（不要缩放整个矩形）
-    const int tabHeaderHeight = static_cast<int>(22 * scale);
-    rcTab.top += tabHeaderHeight;
+	// FALSE表示将控件客户区转换为内容区域（扣除标签头）
+	TabCtrl_AdjustRect(hTabCtrl, FALSE, &rcTab);
 
     // 设置子窗口位置和大小
     for (auto& page : hTabPages)
